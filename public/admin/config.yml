@@ -1,9 +1,6 @@
 backend:
-  name: github
-  repo: carlo-cortez/portfolio
+  name: git-gateway
   branch: main
-  # Free public OAuth gateway for Sveltia CMS / Decap on Vercel
-  base_url: https://sveltia-cms-auth.vercel.app
 
 media_folder: public/images
 public_folder: /images
