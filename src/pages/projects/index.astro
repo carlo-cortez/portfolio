@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { getCollection } from 'astro:content';
+
+const allProjects = await getCollection('projects');
+const sortedProjects = allProjects.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Get unique tags across all projects
+const allTags = Array.from(new Set(allProjects.flatMap((p) => p.data.tags)));
+
+const gradients = [
+  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+  'linear-gradient(135deg, #10b981, #059669)',
+  'linear-gradient(135deg, #f59e0b, #f97316)',
+  'linear-gradient(135deg, #ec4899, #a855f7)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+];
+---
+
+<BaseLayout title="All Projects — Portfolio" description="Browse all projects and case studies.">
+  <div class="container page-header">
+    <h1>All Projects</h1>
+    <p class="count">{sortedProjects.length} projects</p>
+  </div>
+
+  <section class="projects-section">
+    <div class="container">
+      <!-- Tag Filter -->
+      <div class="tag-filter" id="tagFilter">
+        <button class="filter-pill active" data-tag="all">All</button>
+        {allTags.map((tag) => (
+          <button class="filter-pill" data-tag={tag}>{tag}</button>
+        ))}
+      </div>
+
+      <!-- Grid -->
+      <div class="projects-grid" id="projectsGrid">
+        {sortedProjects.map((project, idx) => (
+          <ProjectCard
+            title={project.data.title}
+            description={project.data.description}
+            tags={project.data.tags}
+            slug={project.slug}
+            image={project.data.image}
+            github={project.data.github}
+            live={project.data.live}
+            gradient={gradients[idx % gradients.length]}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 56px 0 0;
+  }
+  .page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .page-header .count {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .projects-section {
+    padding-top: 36px;
+  }
+  .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 36px;
+  }
+  .filter-pill {
+    padding: 7px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .filter-pill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .filter-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  :global(.card[data-hidden="true"]) {
+    display: none !important;
+  }
+  @media (max-width: 1024px) {
+    .projects-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .projects-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script is:inline>
+  const pills = document.querySelectorAll('.filter-pill');
+  const cards = document.querySelectorAll('#projectsGrid .card');
+  pills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      pills.forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      const tag = pill.dataset.tag;
+      cards.forEach((card) => {
+        const tags = JSON.parse(card.dataset.tags || '[]');
+        card.setAttribute('data-hidden', tag !== 'all' && !tags.includes(tag) ? 'true' : 'false');
+      });
+    });
+  });
+</script>

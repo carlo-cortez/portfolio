@@ -1,0 +1,183 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { getCollection } from 'astro:content';
+
+const allProjects = await getCollection('projects');
+const featuredProjects = allProjects
+  .filter((p) => p.data.featured)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const gradients = [
+  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #10b981, #059669)',
+  'linear-gradient(135deg, #ec4899, #a855f7)',
+];
+---
+
+<BaseLayout title="Portfolio — Home" description="Developer Portfolio showcasing projects and skills.">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="avail-badge"><span class="avail-dot"></span> Available for work</div>
+      <h1>Hi, I'm <span>[Name]</span></h1>
+      <p class="hero-sub">I design and build things for the web. Focused on clean code and great user experiences.</p>
+      <div class="hero-btns">
+        <a href="/projects" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          View My Projects
+        </a>
+        <a href="/about" class="btn btn-secondary">About Me</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PROJECTS -->
+  <section class="featured">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <div class="section-label">Work</div>
+          <h2 class="section-title">Featured Projects</h2>
+          <p class="section-sub">A selection of my recent work</p>
+        </div>
+        <a href="/projects" class="view-all">View all projects &rarr;</a>
+      </div>
+      <div class="projects-grid">
+        {featuredProjects.map((project, idx) => (
+          <ProjectCard
+            title={project.data.title}
+            description={project.data.description}
+            tags={project.data.tags}
+            slug={project.slug}
+            image={project.data.image}
+            github={project.data.github}
+            live={project.data.live}
+            gradient={gradients[idx % gradients.length]}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 100px 0 80px;
+    text-align: center;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, #eef2ff 0%, transparent 70%);
+  }
+  :global([data-theme="dark"]) .hero {
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, #1e1b4b 0%, transparent 70%);
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .hero h1 span {
+    color: var(--accent);
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--text-muted);
+    max-width: 520px;
+    margin: 0 auto 36px;
+  }
+  .hero-btns {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .avail-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #dcfce7;
+    color: #15803d;
+    border-radius: var(--radius-pill);
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  :global([data-theme="dark"]) .avail-badge {
+    background: #14532d;
+    color: #86efac;
+  }
+  .avail-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .featured {
+    background: var(--bg-alt);
+  }
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .section-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .section-sub {
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-size: 1rem;
+  }
+  .view-all {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: gap var(--transition);
+    white-space: nowrap;
+  }
+  .view-all:hover {
+    gap: 8px;
+  }
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 1024px) {
+    .projects-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .projects-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .hero-btns { flex-direction: column; align-items: stretch; }
+    .btn { justify-content: center; }
+  }
+</style>
