@@ -6,8 +6,8 @@ import { getCollection } from 'astro:content';
 const allProjects = await getCollection('projects');
 const sortedProjects = allProjects.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-// Get unique tags across all projects
-const allTags = Array.from(new Set(allProjects.flatMap((p) => p.data.tags)));
+// Unique tags across all projects
+const allTags = Array.from(new Set(allProjects.flatMap((p) => p.data.tags))).sort();
 
 const gradients = [
   'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -15,19 +15,32 @@ const gradients = [
   'linear-gradient(135deg, #10b981, #059669)',
   'linear-gradient(135deg, #f59e0b, #f97316)',
   'linear-gradient(135deg, #ec4899, #a855f7)',
-  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #8b5cf6, #3b82f6)',
 ];
 ---
 
-<BaseLayout title="All Projects — Portfolio" description="Browse all projects and case studies.">
+<BaseLayout title="All Projects — Portfolio" description="Browse all software projects, case studies, and experiments.">
   <div class="container page-header">
-    <h1>All Projects</h1>
-    <p class="count">{sortedProjects.length} projects</p>
+    <div class="header-content">
+      <div>
+        <div class="section-label">Portfolio</div>
+        <h1>All Projects</h1>
+        <p class="count" id="projectCount">Showing {sortedProjects.length} projects</p>
+      </div>
+      <!-- Search Input -->
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search by name or tech..." aria-label="Search projects" />
+      </div>
+    </div>
   </div>
 
   <section class="projects-section">
     <div class="container">
-      <!-- Tag Filter -->
+      <!-- Tag Filter Pills -->
       <div class="tag-filter" id="tagFilter">
         <button class="filter-pill active" data-tag="all">All</button>
         {allTags.map((tag) => (
@@ -35,20 +48,34 @@ const gradients = [
         ))}
       </div>
 
-      <!-- Grid -->
+      <!-- Projects Grid -->
       <div class="projects-grid" id="projectsGrid">
         {sortedProjects.map((project, idx) => (
-          <ProjectCard
-            title={project.data.title}
-            description={project.data.description}
-            tags={project.data.tags}
-            slug={project.slug}
-            image={project.data.image}
-            github={project.data.github}
-            live={project.data.live}
-            gradient={gradients[idx % gradients.length]}
-          />
+          <div class="project-wrapper" data-title={project.data.title.toLowerCase()} data-desc={project.data.description.toLowerCase()} data-tags={JSON.stringify(project.data.tags)}>
+            <ProjectCard
+              title={project.data.title}
+              description={project.data.description}
+              tags={project.data.tags}
+              slug={project.slug}
+              image={project.data.image}
+              github={project.data.github}
+              live={project.data.live}
+              gradient={gradients[idx % gradients.length]}
+            />
+          </div>
         ))}
+      </div>
+
+      <!-- Empty State -->
+      <div id="noResults" class="no-results" style="display: none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+        <h3>No projects found</h3>
+        <p>Try searching for a different keyword or selecting another tag.</p>
+        <button id="resetFilterBtn" class="btn btn-secondary btn-sm" style="margin-top: 12px;">Reset Filters</button>
       </div>
     </div>
   </section>
@@ -58,24 +85,70 @@ const gradients = [
   .page-header {
     padding: 56px 0 0;
   }
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .section-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
   .page-header h1 {
     font-size: 2.5rem;
     font-weight: 800;
     letter-spacing: -0.03em;
+    line-height: 1.1;
   }
   .page-header .count {
     font-size: 0.9rem;
     color: var(--text-muted);
     margin-top: 6px;
   }
+  .search-box {
+    position: relative;
+    min-width: 260px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .search-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
   .projects-section {
-    padding-top: 36px;
+    padding-top: 32px;
   }
   .tag-filter {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 36px;
+    margin-bottom: 32px;
   }
   .filter-pill {
     padding: 7px 16px;
@@ -102,29 +175,102 @@ const gradients = [
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
   }
-  :global(.card[data-hidden="true"]) {
+  .project-wrapper[data-hidden="true"] {
     display: none !important;
+  }
+  .no-results {
+    text-align: center;
+    padding: 64px 20px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px dashed var(--border);
+  }
+  .no-results svg {
+    margin: 0 auto 12px;
+    color: var(--text-muted);
+  }
+  .no-results h3 {
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 6px;
   }
   @media (max-width: 1024px) {
     .projects-grid { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 768px) {
+    .header-content { flex-direction: column; align-items: stretch; }
+    .search-box { width: 100%; }
     .projects-grid { grid-template-columns: 1fr; }
   }
 </style>
 
 <script is:inline>
+  const searchInput = document.getElementById('searchInput');
   const pills = document.querySelectorAll('.filter-pill');
-  const cards = document.querySelectorAll('#projectsGrid .card');
+  const wrappers = document.querySelectorAll('.project-wrapper');
+  const projectCount = document.getElementById('projectCount');
+  const noResults = document.getElementById('noResults');
+  const resetBtn = document.getElementById('resetFilterBtn');
+
+  let activeTag = 'all';
+  let searchTerm = '';
+
+  function filterProjects() {
+    let visibleCount = 0;
+    wrappers.forEach((wrapper) => {
+      const title = wrapper.dataset.title || '';
+      const desc = wrapper.dataset.desc || '';
+      const tags = JSON.parse(wrapper.dataset.tags || '[]');
+      const tagLower = tags.map(t => t.toLowerCase());
+
+      const matchesTag = activeTag === 'all' || tags.includes(activeTag);
+      const matchesSearch = !searchTerm || 
+        title.includes(searchTerm) || 
+        desc.includes(searchTerm) || 
+        tagLower.some(t => t.includes(searchTerm));
+
+      if (matchesTag && matchesSearch) {
+        wrapper.setAttribute('data-hidden', 'false');
+        visibleCount++;
+      } else {
+        wrapper.setAttribute('data-hidden', 'true');
+      }
+    });
+
+    if (projectCount) {
+      projectCount.textContent = `Showing ${visibleCount} project${visibleCount === 1 ? '' : 's'}`;
+    }
+    if (noResults) {
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+  }
+
   pills.forEach((pill) => {
     pill.addEventListener('click', () => {
       pills.forEach((p) => p.classList.remove('active'));
       pill.classList.add('active');
-      const tag = pill.dataset.tag;
-      cards.forEach((card) => {
-        const tags = JSON.parse(card.dataset.tags || '[]');
-        card.setAttribute('data-hidden', tag !== 'all' && !tags.includes(tag) ? 'true' : 'false');
-      });
+      activeTag = pill.dataset.tag;
+      filterProjects();
     });
   });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value.toLowerCase().trim();
+      filterProjects();
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      searchTerm = '';
+      activeTag = 'all';
+      pills.forEach((p) => p.classList.remove('active'));
+      pills[0].classList.add('active');
+      filterProjects();
+    });
+  }
 </script>

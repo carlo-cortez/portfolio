@@ -4,17 +4,25 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
-  return projects.map((project) => ({
+  const sortedProjects = projects.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+  return sortedProjects.map((project, index) => ({
     params: { slug: project.slug },
-    props: { project },
+    props: {
+      project,
+      prevProject: index < sortedProjects.length - 1 ? sortedProjects[index + 1] : null,
+      nextProject: index > 0 ? sortedProjects[index - 1] : null,
+    },
   }));
 }
 
 interface Props {
   project: CollectionEntry<'projects'>;
+  prevProject: CollectionEntry<'projects'> | null;
+  nextProject: CollectionEntry<'projects'> | null;
 }
 
-const { project } = Astro.props;
+const { project, prevProject, nextProject } = Astro.props;
 const { Content } = await project.render();
 
 const formattedDate = project.data.date.toLocaleDateString('en-US', {
@@ -40,33 +48,56 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
     </div>
 
     <!-- Title & Meta -->
-    <h1 class="detail-title">{project.data.title}</h1>
-    <div class="detail-meta">
-      {project.data.tags.map((tag) => (
-        <span class="tag">{tag}</span>
-      ))}
-      <span class="detail-date">{formattedDate}</span>
-    </div>
+    <div class="header-section">
+      <h1 class="detail-title">{project.data.title}</h1>
+      <div class="detail-meta">
+        <div class="tag-group">
+          {project.data.tags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+        <span class="detail-date">{formattedDate}</span>
+      </div>
 
-    <!-- Action buttons -->
-    <div class="detail-actions">
-      {project.data.live && (
-        <a href={project.data.live} target="_blank" rel="noopener" class="btn btn-primary">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          View Live Site
-        </a>
-      )}
-      {project.data.github && (
-        <a href={project.data.github} target="_blank" rel="noopener" class="btn btn-secondary">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          View on GitHub
-        </a>
-      )}
+      <!-- Action buttons -->
+      <div class="detail-actions">
+        {project.data.live && (
+          <a href={project.data.live} target="_blank" rel="noopener" class="btn btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            View Live Site
+          </a>
+        )}
+        {project.data.github && (
+          <a href={project.data.github} target="_blank" rel="noopener" class="btn btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            View on GitHub
+          </a>
+        )}
+      </div>
     </div>
 
     <!-- Rendered Markdown Body -->
-    <div class="prose">
+    <div class="prose project-content">
       <Content />
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Project Navigation (Prev / Next) -->
+    <div class="project-nav">
+      {prevProject ? (
+        <a href={`/projects/${prevProject.slug}`} class="nav-card prev-card">
+          <span class="nav-direction">&larr; Previous Project</span>
+          <span class="nav-title">{prevProject.data.title}</span>
+        </a>
+      ) : <div />}
+
+      {nextProject ? (
+        <a href={`/projects/${nextProject.slug}`} class="nav-card next-card">
+          <span class="nav-direction">Next Project &rarr;</span>
+          <span class="nav-title">{nextProject.data.title}</span>
+        </a>
+      ) : <div />}
     </div>
   </div>
 </BaseLayout>
@@ -74,6 +105,7 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
 <style>
   .detail-wrap {
     padding: 48px 0 80px;
+    max-width: 860px;
   }
   .back-link {
     display: inline-flex;
@@ -91,7 +123,7 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
   .hero-banner {
     width: 100%;
     aspect-ratio: 16/9;
-    max-height: 420px;
+    max-height: 380px;
     border-radius: var(--radius);
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
     display: flex;
@@ -115,7 +147,7 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
     padding: 24px;
   }
   .hero-banner-text h2 {
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 800;
     letter-spacing: -0.03em;
   }
@@ -123,6 +155,12 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
     opacity: 0.85;
     margin-top: 8px;
     font-size: 1rem;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .header-section {
+    margin-bottom: 40px;
   }
   .detail-title {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
@@ -134,8 +172,14 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin: 16px 0 24px;
+  }
+  .tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
   .detail-date {
     font-size: 0.875rem;
@@ -145,6 +189,94 @@ const formattedDate = project.data.date.toLocaleDateString('en-US', {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 48px;
+  }
+  .project-content {
+    margin-top: 32px;
+  }
+  :global(.prose) {
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
+  :global(.prose h2) {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  :global(.prose h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  :global(.prose p) {
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+  :global(.prose ul, .prose ol) {
+    padding-left: 24px;
+    margin-bottom: 24px;
+  }
+  :global(.prose li) {
+    margin-bottom: 8px;
+    color: var(--text-muted);
+  }
+  :global(.prose strong) {
+    color: var(--text);
+  }
+  :global(.prose code) {
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    border: 1px solid var(--border);
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 56px 0 36px;
+  }
+  .project-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    transition: transform var(--transition), border-color var(--transition);
+    text-decoration: none;
+  }
+  .nav-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .next-card {
+    text-align: right;
+  }
+  .nav-direction {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .nav-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  @media (max-width: 640px) {
+    .project-nav {
+      grid-template-columns: 1fr;
+    }
+    .next-card {
+      text-align: left;
+    }
   }
 </style>
