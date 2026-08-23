@@ -1,9 +1,7 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: carlo-cortez/portfolio
   branch: main
-
-# Allows local editing when running decap proxy server (npx decap-server)
-local_backend: true
 
 media_folder: public/images
 public_folder: /images
