@@ -3,7 +3,6 @@ title: "E-Commerce REST API"
 description: "A high-performance asynchronous API built for e-commerce with payment processing and inventory tracking."
 tags: ["Python", "FastAPI", "PostgreSQL", "Docker"]
 date: 2026-06-10
-image: "/images/placeholder.svg"
 github: "https://github.com/example/ecommerce-api"
 featured: true
 ---

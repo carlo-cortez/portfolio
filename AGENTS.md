@@ -52,6 +52,10 @@ Whenever an AI agent is working on this codebase, follow the principles and arch
 
 ## 📝 Content Schema & Rules for Adding Projects
 
+> **Personal info (name, tagline, social links, résumé)** lives in `src/site.config.ts`.
+> Empty links are hidden automatically — never hard-code names or "#" links in pages.
+> Project card colors come from `src/lib/gradient.ts` (stable per slug); shared icons are in `src/components/Icon.astro`.
+
 All projects are stored as Markdown files inside `src/content/projects/<slug>.md`.
 
 ### Required Frontmatter Schema

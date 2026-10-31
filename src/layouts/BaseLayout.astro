@@ -1,11 +1,22 @@
 ---
+import Icon from '../components/Icon.astro';
+import { site } from '../site.config';
+
 interface Props {
   title: string;
   description?: string;
 }
 
-const { title, description = "Developer Portfolio" } = Astro.props;
-const currentPath = Astro.url.pathname;
+const { title, description = `${site.name} — ${site.role} portfolio` } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const navItems = [
+  { href: '/', label: 'Home' },
+  { href: '/projects', label: 'Projects' },
+  { href: '/about', label: 'About' },
+];
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
 ---
 
 <!doctype html>
@@ -14,95 +25,137 @@ const currentPath = Astro.url.pathname;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>{title}</title>
-    <!-- Netlify Identity Widget for Decap CMS -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  </head>
-  <body>
+
+    <!-- Apply saved theme BEFORE first paint to avoid a light→dark flash -->
     <script is:inline>
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", (user) => {
-          if (!user) {
-            window.netlifyIdentity.on("login", () => {
-              document.location.href = "/admin/";
-            });
-          }
-        });
+      (() => {
+        const saved = localStorage.getItem('theme');
+        const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
+
+    <!--
+      Netlify Identity (for the /admin CMS) is only needed when arriving from an
+      invite / password-reset email link, so load it on demand instead of on every page.
+    -->
+    <script is:inline>
+      if (/(invite|recovery|confirmation|email_change)_token=/.test(location.hash)) {
+        const s = document.createElement('script');
+        s.src = 'https://identity.netlify.com/v1/netlify-identity-widget.js';
+        s.onload = () => window.netlifyIdentity.on('login', () => (location.href = '/admin/'));
+        document.head.appendChild(s);
       }
     </script>
-    <!-- Nav -->
-    <nav>
-      <div class="nav-inner">
-        <a href="/" class="nav-logo">[Your<span>.</span>Name]</a>
-        <div class="nav-links">
-          <a href="/projects" class:list={[{ active: currentPath.startsWith('/projects') }]}>Projects</a>
-          <a href="/about" class:list={[{ active: currentPath === '/about' }]}>About</a>
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
-        </div>
-        <div class="mobile-controls">
-          <button class="theme-toggle" id="themeToggleMobile" aria-label="Toggle dark mode">🌙</button>
-          <button class="hamburger" id="hamburger" aria-label="Open menu">☰</button>
-        </div>
-      </div>
-      <div class="mobile-menu" id="mobileMenu">
-        <a href="/projects">Projects</a>
-        <a href="/about">About</a>
-      </div>
-    </nav>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
 
-    <main>
+    <header class="site-header">
+      <nav class="nav-inner" aria-label="Main">
+        <a href="/" class="nav-logo" aria-label={`${site.name} — home`}>
+          {site.shortName}<span>.</span>
+        </a>
+
+        <ul class="nav-links">
+          {navItems.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+            </li>
+          ))}
+        </ul>
+
+        <div class="nav-actions">
+          <button class="icon-btn theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+            <span class="icon-moon"><Icon name="moon" size={18} /></span>
+            <span class="icon-sun"><Icon name="sun" size={18} /></span>
+          </button>
+          <button
+            class="icon-btn hamburger"
+            id="menuToggle"
+            type="button"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="mobileMenu"
+          >
+            <span class="icon-open"><Icon name="menu" size={20} /></span>
+            <span class="icon-close"><Icon name="close" size={20} /></span>
+          </button>
+        </div>
+      </nav>
+
+      <ul class="mobile-menu" id="mobileMenu" hidden>
+        {navItems.map((item) => (
+          <li>
+            <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+          </li>
+        ))}
+      </ul>
+    </header>
+
+    <main id="main" tabindex="-1">
       <slot />
     </main>
 
-    <!-- Footer -->
     <footer>
       <div class="footer-inner">
-        <span class="footer-copy">&copy; {new Date().getFullYear()} [Your Name]. Built with Astro.</span>
+        <span class="footer-copy">&copy; {new Date().getFullYear()} {site.name}</span>
         <div class="footer-links">
-          <a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          </a>
-          <a href="https://linkedin.com" target="_blank" rel="noopener" aria-label="LinkedIn">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          </a>
-          <a href="mailto:hello@example.com" aria-label="Email">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </a>
+          {site.links.github && (
+            <a href={site.links.github} target="_blank" rel="noopener" aria-label="GitHub (opens in new tab)"><Icon name="github" size={18} /></a>
+          )}
+          {site.links.linkedin && (
+            <a href={site.links.linkedin} target="_blank" rel="noopener" aria-label="LinkedIn (opens in new tab)"><Icon name="linkedin" size={18} /></a>
+          )}
+          {site.links.email && (
+            <a href={`mailto:${site.links.email}`} aria-label="Email"><Icon name="mail" size={18} /></a>
+          )}
         </div>
       </div>
     </footer>
 
     <script is:inline>
-      // Dark mode toggle
-      const html = document.documentElement;
-      const toggles = [document.getElementById('themeToggle'), document.getElementById('themeToggleMobile')];
-      const saved = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (saved === 'dark' || (!saved && prefersDark)) {
-        html.setAttribute('data-theme', 'dark');
-        toggles.forEach(t => t && (t.textContent = '☀️'));
-      }
-      toggles.forEach(btn => btn && btn.addEventListener('click', () => {
-        const isDark = html.getAttribute('data-theme') === 'dark';
-        html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        localStorage.setItem('theme', isDark ? 'light' : 'dark');
-        toggles.forEach(t => t && (t.textContent = isDark ? '🌙' : '☀️'));
-      }));
-      // Hamburger
-      document.getElementById('hamburger').addEventListener('click', () => {
-        document.getElementById('mobileMenu').classList.toggle('open');
-      });
-      // Show mobile theme toggle on small screens
-      function checkMobile() {
-        const isMobile = window.innerWidth < 768;
-        document.getElementById('themeToggleMobile').style.display = isMobile ? 'flex' : 'none';
-      }
-      checkMobile();
-      window.addEventListener('resize', checkMobile);
+      (() => {
+        const root = document.documentElement;
+
+        // ── Theme toggle ──
+        const themeBtn = document.getElementById('themeToggle');
+        const syncThemeBtn = () => themeBtn.setAttribute('aria-pressed', String(root.dataset.theme === 'dark'));
+        syncThemeBtn();
+        themeBtn.addEventListener('click', () => {
+          const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+          root.dataset.theme = next;
+          localStorage.setItem('theme', next);
+          syncThemeBtn();
+        });
+
+        // ── Mobile menu ──
+        const menuBtn = document.getElementById('menuToggle');
+        const menu = document.getElementById('mobileMenu');
+        const setMenu = (open) => {
+          menu.hidden = !open;
+          menuBtn.setAttribute('aria-expanded', String(open));
+          menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        };
+        menuBtn.addEventListener('click', () => setMenu(menu.hidden));
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !menu.hidden) { setMenu(false); menuBtn.focus(); }
+        });
+        document.addEventListener('click', (e) => {
+          if (!menu.hidden && !menu.contains(e.target) && !menuBtn.contains(e.target)) setMenu(false);
+        });
+        matchMedia('(min-width: 768px)').addEventListener('change', (e) => e.matches && setMenu(false));
+      })();
     </script>
   </body>
 </html>
@@ -110,12 +163,13 @@ const currentPath = Astro.url.pathname;
 <style is:global>
   /* ── CSS Variables ── */
   :root {
+    color-scheme: light;
     --bg: #ffffff;
     --bg-alt: #f8fafc;
     --surface: #f1f5f9;
     --border: #e2e8f0;
     --text: #0f172a;
-    --text-muted: #64748b;
+    --text-muted: #5b6b80;
     --accent: #6366f1;
     --accent-hover: #4f46e5;
     --accent-light: #eef2ff;
@@ -131,91 +185,131 @@ const currentPath = Astro.url.pathname;
     --transition: 0.2s ease;
   }
   [data-theme="dark"] {
+    color-scheme: dark;
     --bg: #0f172a;
-    --bg-alt: #0f172a;
+    --bg-alt: #111c33;
     --surface: #1e293b;
     --border: #334155;
     --text: #f1f5f9;
-    --text-muted: #94a3b8;
+    --text-muted: #a3b1c6;
     --accent: #818cf8;
     --accent-hover: #6366f1;
     --accent-light: #1e1b4b;
     --tag-bg: #312e81;
-    --tag-text: #a5b4fc;
+    --tag-text: #c7d2fe;
     --card-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
     --card-shadow-hover: 0 8px 30px rgba(129,140,248,.2);
   }
 
+  /* ── Smooth cross-page transitions (progressive enhancement; ignored by unsupported browsers) ── */
+  @media (prefers-reduced-motion: no-preference) {
+    @view-transition { navigation: auto; }
+  }
+
   /* ── Reset ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+  html { scroll-padding-top: calc(var(--nav-height) + 16px); }
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
     line-height: 1.7;
-    transition: background var(--transition), color var(--transition);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
     -webkit-font-smoothing: antialiased;
   }
+  main { flex: 1; outline: none; }
   a { color: inherit; text-decoration: none; }
   img { display: block; max-width: 100%; }
   ul { list-style: none; }
+  button { font: inherit; color: inherit; }
 
-  /* ── Nav ── */
-  nav {
+  /* ── Accessibility ── */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .skip-link {
+    position: absolute;
+    left: 16px;
+    top: -100px;
+    z-index: 200;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .skip-link:focus { top: 12px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ── Header / Nav ── */
+  .site-header {
     position: sticky; top: 0; z-index: 100;
-    height: var(--nav-height);
-    display: flex; align-items: center;
     border-bottom: 1px solid var(--border);
-    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    transition: background var(--transition), border-color var(--transition);
   }
   .nav-inner {
-    width: 100%; max-width: var(--max-w);
+    height: var(--nav-height);
+    max-width: var(--max-w);
     margin: 0 auto; padding: 0 24px;
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; gap: 16px;
   }
-  .nav-logo { font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .nav-logo { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; margin-right: auto; }
   .nav-logo span { color: var(--accent); }
-  .nav-links { display: flex; align-items: center; gap: 8px; }
-  .nav-links a {
+  .nav-links { display: flex; align-items: center; gap: 4px; }
+  .nav-links a, .mobile-menu a {
+    display: block;
     padding: 6px 14px; border-radius: var(--radius-pill);
-    font-size: 0.9rem; font-weight: 500; color: var(--text-muted);
+    font-size: 0.92rem; font-weight: 500; color: var(--text-muted);
     transition: color var(--transition), background var(--transition);
   }
-  .nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--surface); }
-  .theme-toggle {
-    width: 36px; height: 36px; border-radius: var(--radius-pill);
+  .nav-links a:hover, .mobile-menu a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a[aria-current="page"], .mobile-menu a[aria-current="page"] {
+    color: var(--accent); background: var(--accent-light); font-weight: 600;
+  }
+  .nav-actions { display: flex; align-items: center; gap: 6px; }
+  .icon-btn {
+    width: 40px; height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-pill);
     border: 1px solid var(--border); background: var(--surface);
-    cursor: pointer; font-size: 1rem;
-    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
     transition: background var(--transition), border-color var(--transition);
-    margin-left: 8px;
   }
-  .theme-toggle:hover { background: var(--border); }
-  .mobile-controls { display: none; align-items: center; gap: 4px; }
-  .hamburger {
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid var(--border); border-radius: var(--radius-sm);
-    background: var(--surface); cursor: pointer;
-    font-size: 1.2rem; color: var(--text);
-  }
+  .icon-btn:hover { border-color: var(--accent); }
+  .icon-btn > span { display: inline-flex; }
+  .theme-toggle .icon-sun, [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+  [data-theme="dark"] .theme-toggle .icon-sun { display: inline-flex; }
+  .hamburger { display: none; }
+  .hamburger .icon-close, .hamburger[aria-expanded="true"] .icon-open { display: none; }
+  .hamburger[aria-expanded="true"] .icon-close { display: inline-flex; }
+
   .mobile-menu {
-    display: none; position: absolute;
-    top: var(--nav-height); left: 0; right: 0;
-    background: var(--bg); border-bottom: 1px solid var(--border);
-    padding: 12px 24px 16px; flex-direction: column; gap: 4px;
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 8px 24px 16px;
+    border-top: 1px solid var(--border);
   }
-  .mobile-menu.open { display: flex; }
-  .mobile-menu a {
-    padding: 10px 12px; border-radius: var(--radius-sm);
-    font-weight: 500; color: var(--text-muted);
-    transition: background var(--transition), color var(--transition);
-  }
-  .mobile-menu a:hover { background: var(--surface); color: var(--text); }
+  .mobile-menu[hidden] { display: none; }
+  .mobile-menu a { padding: 12px 14px; font-size: 1rem; border-radius: var(--radius-sm); }
 
   /* ── Layout ── */
   .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
@@ -223,16 +317,19 @@ const currentPath = Astro.url.pathname;
 
   /* ── Buttons ── */
   .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 24px; border-radius: var(--radius-sm);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px;
+    padding: 10px 22px; border-radius: var(--radius-sm);
     font-size: 0.95rem; font-weight: 600;
-    cursor: pointer; border: none; transition: all var(--transition);
+    cursor: pointer; border: 1px solid transparent;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition), border-color var(--transition);
   }
   .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.4); }
-  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: var(--surface); transform: translateY(-1px); }
-  .btn-sm { padding: 8px 16px; font-size: 0.875rem; }
+  [data-theme="dark"] .btn-primary { color: #0f172a; }
+  .btn-primary:hover { background: var(--accent-hover); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.4); }
+  .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface); border-color: var(--accent); transform: translateY(-1px); }
+  .btn-sm { min-height: 38px; padding: 7px 16px; font-size: 0.875rem; }
 
   /* ── Tags ── */
   .tag {
@@ -242,31 +339,35 @@ const currentPath = Astro.url.pathname;
     background: var(--tag-bg); color: var(--tag-text);
   }
 
+  /* ── Section headings (shared) ── */
+  .section-label {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+  }
+
   /* ── Footer ── */
-  footer { border-top: 1px solid var(--border); padding: 32px 0; transition: border-color var(--transition); }
+  footer { border-top: 1px solid var(--border); padding: 32px 0; }
   .footer-inner {
     max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
   }
   .footer-copy { font-size: 0.875rem; color: var(--text-muted); }
-  .footer-links { display: flex; gap: 16px; }
-  .footer-links a { color: var(--text-muted); transition: color var(--transition); display: flex; align-items: center; }
-  .footer-links a:hover { color: var(--accent); }
-  .footer-links svg { width: 18px; height: 18px; }
-
-  /* ── Prose ── */
-  .prose { max-width: 720px; }
-  .prose h2 { font-size: 1.375rem; font-weight: 700; margin: 32px 0 12px; color: var(--text); }
-  .prose p { color: var(--text-muted); margin-bottom: 16px; line-height: 1.8; }
-  .prose ul { padding-left: 20px; margin-bottom: 16px; }
-  .prose ul li { color: var(--text-muted); margin-bottom: 6px; list-style: disc; }
-  .prose strong { color: var(--text); font-weight: 600; }
+  .footer-links { display: flex; gap: 8px; }
+  .footer-links a {
+    width: 40px; height: 40px; border-radius: var(--radius-pill);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-muted); transition: color var(--transition), background var(--transition);
+  }
+  .footer-links a:hover { color: var(--accent); background: var(--surface); }
 
   /* ── Responsive ── */
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     .nav-links { display: none; }
-    .mobile-controls { display: flex; }
+    .hamburger { display: inline-flex; }
     section { padding: 56px 0; }
     .footer-inner { flex-direction: column; text-align: center; }
+  }
+  @media (min-width: 768px) {
+    .mobile-menu { display: none !important; }
   }
 </style>

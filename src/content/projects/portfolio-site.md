@@ -1,9 +1,8 @@
 ---
 title: "Portfolio Website"
-description: "This very website — built with Astro, Tailwind CSS, and a headless CMS."
+description: "This very website â€” built with Astro, Tailwind CSS, and a headless CMS."
 tags: ["Astro", "Tailwind", "CMS"]
 date: 2026-08-20
-image: "/images/placeholder.svg"
 live: "https://example.com"
 featured: false
 ---

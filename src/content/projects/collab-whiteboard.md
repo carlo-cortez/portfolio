@@ -3,7 +3,6 @@ title: "Real-Time Collab Whiteboard"
 description: "An infinite canvas whiteboard enabling multiple users to brainstorm, draw, and diagram simultaneously."
 tags: ["React", "TypeScript", "WebSocket", "Canvas"]
 date: 2026-03-05
-image: "/images/placeholder.svg"
 github: "https://github.com/example/collab-whiteboard"
 live: "https://collab-whiteboard-demo.vercel.app"
 featured: true

@@ -3,7 +3,6 @@ title: "AI Vision Classifier"
 description: "A deep learning image classification web application with real-time inference and model performance metrics."
 tags: ["Python", "PyTorch", "React", "API"]
 date: 2026-04-18
-image: "/images/placeholder.svg"
 github: "https://github.com/example/ai-vision-classifier"
 live: "https://vision-classifier-demo.vercel.app"
 featured: false

@@ -3,7 +3,6 @@ title: "Task Manager App"
 description: "A full-stack task management app with real-time updates and team collaboration features."
 tags: ["React", "Node.js", "Socket.io"]
 date: 2026-07-15
-image: "/images/placeholder.svg"
 github: "https://github.com/example/task-manager"
 live: "https://task-manager-demo.vercel.app"
 featured: true
